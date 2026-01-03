@@ -19,7 +19,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.lwjgl.glfw.GLFW;
 
 @Mod(value = TimeStatus.MODID, dist = Dist.CLIENT)
-@EventBusSubscriber(modid = TimeStatus.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = TimeStatus.MODID, value = Dist.CLIENT)
 public class TimeStatusClient {
     public static final KeyMapping TOGGLE_KEY = new KeyMapping(
         "key.timestatus.toggle",
@@ -69,11 +69,12 @@ public class TimeStatusClient {
         long worldTime = minecraft.level.getDayTime();
         long ticksInDay = 24000;
         long timeOfDay = worldTime % ticksInDay;
+        long dayNumber = worldTime / ticksInDay;
         
         int barWidth = 50;
         int barHeight = 3;
         int x = 10;
-        int y = 10;
+        int y = Config.HIDE_DAY_COUNT.get() ? 10 : 20;
         
         float progress = 0;
         int barColor = 0;
@@ -81,33 +82,33 @@ public class TimeStatusClient {
         long periodStartTick = 0;
         long periodDurationTicks = 0;
         
-        if (timeOfDay >= 0 && timeOfDay < 11500) {
-            progress = timeOfDay / 11500f;
+        if (timeOfDay >= 0 && timeOfDay < 12000) {
+            progress = timeOfDay / 12000f;
             barColor = 0xFF4A90E2;
             timeLabel = "Day";
             periodStartTick = 0;
-            periodDurationTicks = 11500;
-        } else if (timeOfDay >= 11500 && timeOfDay < 13000) {
-            progress = (timeOfDay - 11500) / 1500f;
+            periodDurationTicks = 12000;
+        } else if (timeOfDay >= 12000 && timeOfDay < 13000) {
+            progress = (timeOfDay - 12000) / 1000f;
             barColor = 0xFFFFA500;
             timeLabel = "Sunset";
-            periodStartTick = 11500;
-            periodDurationTicks = 1500;
-        } else if (timeOfDay >= 13000 && timeOfDay < 22500) {
-            progress = (timeOfDay - 13000) / 9500f;
+            periodStartTick = 12000;
+            periodDurationTicks = 1000;
+        } else if (timeOfDay >= 13000 && timeOfDay < 23000) {
+            progress = (timeOfDay - 13000) / 10000f;
             barColor = 0xFFDC143C;
             timeLabel = "Night";
             periodStartTick = 13000;
-            periodDurationTicks = 9500;
+            periodDurationTicks = 10000;
         } else {
-            progress = (timeOfDay - 22500) / 1500f;
+            progress = (timeOfDay - 23000) / 1000f;
             barColor = 0xFFFFA500;
             timeLabel = "Sunrise";
-            periodStartTick = 22500;
-            periodDurationTicks = 1500;
+            periodStartTick = 23000;
+            periodDurationTicks = 1000;
         }
         
-        guiGraphics.fill(x - 1, y - 1, x + barWidth + 1, y + barHeight + 1, 0xFF000000);
+        guiGraphics.fill(x - 1, y - 1, x + barWidth + 1, y + barHeight + 1, 0xFF8B8B8B);
         
         guiGraphics.fill(x, y, x + barWidth, y + barHeight, 0xFF333333);
         
@@ -119,10 +120,22 @@ public class TimeStatusClient {
         int elapsedMinutes = (int)((elapsedTicks / 20.0) / 60);
         String timeString = String.format("%d:%02d", elapsedMinutes, elapsedSeconds);
         
-        int labelY = y + barHeight + 2;
-        guiGraphics.drawString(minecraft.font, timeLabel, x, labelY, 0xFFFFFFFF, true);
+        if (!Config.HIDE_DAY_COUNT.get()) {
+            String dayString = "Day " + dayNumber;
+            int dayLabelY = y - minecraft.font.lineHeight - 2;
+            guiGraphics.drawString(minecraft.font, dayString, x, dayLabelY, 0xFFFFFFFF, true);
+        }
         
-        int timerX = x + barWidth + 5;
-        guiGraphics.drawString(minecraft.font, timeString, timerX, y, 0xFFAAAAAA, true);
+        if (!Config.HIDE_DAY_PERIOD.get()) {
+            int labelY = y + barHeight + 2;
+            guiGraphics.drawString(minecraft.font, timeLabel, x, labelY, 0xFFFFFFFF, true);
+        }
+        
+        if (!Config.HIDE_TIME_COUNTER.get()) {
+            int timeStringWidth = minecraft.font.width(timeString);
+            int timerX = x + barWidth + 5;
+            int timerY = y - (minecraft.font.lineHeight / 2) + (barHeight / 2);
+            guiGraphics.drawString(minecraft.font, timeString, timerX, timerY, 0xFFAAAAAA, true);
+        }
     }
 }
