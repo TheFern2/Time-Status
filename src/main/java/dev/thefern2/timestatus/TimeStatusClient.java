@@ -1,5 +1,7 @@
 package dev.thefern2.timestatus;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.neoforged.api.distmarker.Dist;
@@ -8,20 +10,32 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import org.lwjgl.glfw.GLFW;
 
-// This class will not load on dedicated servers. Accessing client side code from here is safe.
 @Mod(value = TimeStatus.MODID, dist = Dist.CLIENT)
-// You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
-@EventBusSubscriber(modid = TimeStatus.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = TimeStatus.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public class TimeStatusClient {
+    public static final KeyMapping TOGGLE_KEY = new KeyMapping(
+        "key.timestatus.toggle",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_H,
+        "key.categories.timestatus"
+    );
+
     public TimeStatusClient(ModContainer container) {
-        // Allows NeoForge to create a config screen for this mod's configs.
-        // The config screen is accessed by going to the Mods screen > clicking on your mod > clicking on config.
-        // Do not forget to add translations for your config options to the en_us.json file.
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        NeoForge.EVENT_BUS.addListener(TimeStatusClient::onPlayerTick);
+    }
+
+    @SubscribeEvent
+    static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
+        event.register(TOGGLE_KEY);
     }
 
     @SubscribeEvent
@@ -29,10 +43,24 @@ public class TimeStatusClient {
         TimeStatus.LOGGER.info("Time Status client initialized");
     }
 
+    static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (event.getEntity().level().isClientSide()) {
+            while (TOGGLE_KEY.consumeClick()) {
+                boolean currentValue = Config.SHOW_TIME_STATUS.get();
+                Config.SHOW_TIME_STATUS.set(!currentValue);
+                Config.SPEC.save();
+            }
+        }
+    }
+
     @SubscribeEvent
     static void onRenderGui(RenderGuiEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) {
+            return;
+        }
+
+        if (!Config.SHOW_TIME_STATUS.get()) {
             return;
         }
 

@@ -1,0 +1,9 @@
+{
+  "key.categories.timestatus": "Time Status",
+  "key.timestatus.toggle": "Toggle Time Status HUD",
+  "timestatus.configuration.title": "Time Status Configs",
+  "timestatus.configuration.section.timestatus.common.toml": "Time Status Configs",
+  "timestatus.configuration.section.timestatus.common.toml.title": "Time Status Configs",
+  "timestatus.configuration.showTimeStatus": "Show Time Status HUD"
+}
+
